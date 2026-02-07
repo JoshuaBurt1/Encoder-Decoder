@@ -1,0 +1,56 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="section">
+    <div class="header decode-header">
+        <h2>Decoding Service</h2>
+    </div>
+        
+    <div class="controls">
+        <div>
+            <label>Cipher Selection</label>
+            <select id="cipherSelect" onchange="toggleKeyInputs()">
+                <option value="shift">Shift Cipher (Caesar)</option>
+                <option value="substitution">Substitution Cipher</option>
+                <option value="permutation">Permutation Cipher</option>
+            </select>
+        </div>
+
+        <div id="shiftInputGroup">
+            <label>Known Shift</label>
+            <input type="number" id="decodeShift" value="0" style="width: 60px;">
+            <button class="btn-smart" onclick="handleManualShift()" style="background: var(--secondary); margin-left:10px;">Shift</button>
+        </div>
+        <div id="substitutionInputGroup" class="hidden">
+            <label>Substitution Key</label>
+            <input type="text" id="subKey" placeholder="e.g. 2,5,1,0..." style="width: 200px;">
+        </div>
+
+        <div id="permInputGroup" class="hidden">
+            <label>Block Size (m)</label>
+            <input type="number" id="permBlockSize" value="5" style="width: 60px;">
+            <label>Key</label>
+            <input type="text" id="permKey" placeholder="0,2,1,4,3" style="width: 150px;">
+        </div>
+
+        <button class="btn-smart" onclick="handleDecoding()">Run Decoding</button>
+    </div>
+
+    <label>Ciphertext Entry</label>
+    <textarea id="cipherEntry" placeholder="Paste encoded text here..."></textarea>
+
+    <label>Resulting Plaintext</label>
+    <div id="decodeResult" class="output-area">Decoded text will appear here...</div>
+    <div id="decodeStatus" class="statusEl"></div>
+    <div id="frequencySection" class="hidden" style="margin-top: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <h3>Frequency Analysis</h3>
+        <p style="font-size: 12px; color: #7f8c8d;">Compare your text (blue) to standard English frequency (gray).</p>
+        <div id="chartContainer" style="height: 200px; display: flex; align-items: flex-end; gap: 2px; border-bottom: 2px solid #ccc; padding-bottom: 5px;">
+            </div>
+        <div id="chartLabels" style="display: flex; gap: 2px; font-size: 10px; text-align: center;">
+            </div>
+    </div>
+</div>
+
+<script type="module" src="{{ url_for('static', filename='js/decode.js') }}"></script>
+{% endblock %}

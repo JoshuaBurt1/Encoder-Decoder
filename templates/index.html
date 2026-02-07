@@ -2,75 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cipher Service Portal</title>
+    <title>Cipher Portal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <nav>
+        <a href="/encode">Encoding</a>
+        <a href="/decode">Decoding</a>
+        <a href="/plaintext-attack">Plaintext Attacks</a>
+    </nav>
 
-<div class="container">
-    <div class="section">
-        <div class="header encode-header">
-            <h2>Encoding Service</h2>
-        </div>
-        
-        <div class="controls">
-            <div>
-                <label>Cipher Selection</label>
-                <select id="cipherSelect" onchange="toggleKeyInputs()">
-                    <option value="shift">Shift Cipher (Caesar)</option>
-                    <option value="substitution">Substitution Cipher</option>
-                    <option value="permutation">Permutation Cipher</option>
-                </select>
-            
-            <div id="shiftInputGroup">
-                <label>Shift Key</label>
-                <input type="number" id="encodeShift" value="3" style="width: 60px;">
-            </div>
-
-            <div id="substitutionInputGroup" class="hidden">
-                <label>Permutation Key (0-28)</label>
-                <input type="text" id="subKey" placeholder="e.g. 2,5,1,0..." style="width: 150px;">
-                <button onclick="handleRandomKey()" style="background:#95a5a6; padding: 5px 10px; font-size: 10px; margin-top:5px;">Random</button>
-            </div>
-
-            <div id="permInputGroup" class="hidden">
-                <label>Block Size (m)</label>
-                <input type="number" id="permBlockSize" value="5" style="width: 50px;">
-                <label>Permutation Key</label>
-                <input type="text" id="permKey" placeholder="0,2,1,4,3" style="width: 120px;">
-                <button onclick="handleRandomKey()" style="background:#95a5a6; padding: 5px 10px; font-size: 10px;">Random</button>
-            </div>
-
-            <button class="btn-encode" onclick="handleEncoding()">Encode Text</button>
-        </div>
-
-        <label>Plaintext Entry</label>
-        <textarea id="plainEntry" placeholder="Enter text to encode..."></textarea>
-
-        <label>Resulting Ciphertext</label>
-        <div id="encodeResult" class="output-area">Your encoded text will appear here...</div>
-        <div id="encodeStatus" class="status"></div>
+    <div class="container">
+        {% block content %}{% endblock %}
     </div>
 
-    <div class="section">
-        <div class="header decode-header">
-            <h2>Decoding Service</h2>
-        </div>
-        
-        <div class="controls">
-            <button class="btn-smart" onclick="handleDecoding()">Run Decoding</button>
-        </div>
-
-        <label>Ciphertext Entry</label>
-        <textarea id="cipherEntry" placeholder="Paste encoded text here..."></textarea>
-
-        <label>Resulting Plaintext</label>
-        <div id="decodeResult" class="output-area">Decoded text will appear here...</div>
-        <div id="decodeStatus" class="status"></div>
-    </div>
-</div>
-
-<script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
-
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

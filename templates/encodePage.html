@@ -1,0 +1,61 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="section">
+    <div class="header encode-header">
+        <h2>Encoding Service</h2>
+    </div>
+
+    <div class="controls">
+        <div style="flex: 1; min-width: 200px;">
+            <label>Cipher Selection</label>
+            <select id="cipherSelect" onchange="toggleKeyInputs()" style="width: 100%;">
+                <option value="shift">Shift Cipher (Caesar)</option>
+                <option value="substitution">Substitution Cipher</option>
+                <option value="permutation">Permutation Cipher</option>
+            </select>
+        </div>
+
+        <div id="shiftInputGroup" style="flex: 1;">
+            <label>Shift Key</label>
+            <input type="number" id="encodeShift" value="3" style="width: 60px;">
+        </div>
+
+        <div id="substitutionInputGroup" class="hidden" style="flex: 2; min-width: 300px;">
+            <label>Substitution Key (29 values)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="subKey" placeholder="e.g. 2,5,1,0..." style="flex: 1;">
+                <button onclick="handleRandomKey()" style="background:#95a5a6; padding: 5px 15px;">Random</button>
+            </div>
+        </div>
+
+        <div id="permInputGroup" class="hidden" style="flex: 2; min-width: 300px;">
+            <div style="display: flex; gap: 15px;">
+                <div>
+                    <label>Block Size (m)</label>
+                    <input type="number" id="permBlockSize" value="5" style="width: 60px;">
+                </div>
+                <div style="flex: 1;">
+                    <label>Permutation Key</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="permKey" placeholder="0,2,1..." style="flex: 1;">
+                        <button onclick="handleRandomKey()" style="background:#95a5a6; padding: 5px 15px;">Random</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="width: 100%; margin-top: 10px;">
+            <button class="btn-encode" onclick="handleEncoding()" style="width: 100%;">Encode Text</button>
+        </div>
+    </div>
+
+    <label>Plaintext Entry</label>
+    <textarea id="plainEntry" placeholder="Enter text to encode..."></textarea>
+
+    <label>Resulting Ciphertext</label>
+    <div id="encodeResult" class="output-area">Your encoded text will appear here...</div>
+    <div id="encodeStatus" class="statusEl"></div>
+</div>
+<script type="module" src="{{ url_for('static', filename='js/encode.js') }}"></script>
+{% endblock %}
