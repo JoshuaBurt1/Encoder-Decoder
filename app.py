@@ -16,7 +16,7 @@ def plaintext_attack():
     return render_template('attackPage.html')
 
 @app.route('/gematria')
-def about():
+def gematria():
     return render_template('gematriaPage.html')
 
 if __name__ == '__main__':
