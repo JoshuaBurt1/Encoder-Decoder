@@ -94,7 +94,7 @@ function performCalculation() {
 
     // 1. Format Standard Punctuation Summation
     const formattedPunctuation = punctuationLinesRaw.map(item => {
-        return `${item.eq.trim().padEnd(30)} = ${item.sum.toString().padStart(8)}`;
+        return `${item.eq.trim().padEnd(40)} = ${item.sum.toString().padStart(8)}`;
     });
 
     // 2. Format Cumulative Punctuation Summation (Linear Alignment)
@@ -105,7 +105,7 @@ function performCalculation() {
             runningCumulative += item.sum;
             cumPart = ` | ${runningCumulative.toString().padStart(8)}`;
         }
-        return `${item.eq.trim().padEnd(30)} = ${item.sum.toString().padStart(8)}${cumPart}`;
+        return `${item.eq.trim().padEnd(40)} = ${item.sum.toString().padStart(8)}${cumPart}`;
     });
 
     letterCountEl.innerText = activeLetterCount;
@@ -121,7 +121,6 @@ function performCalculation() {
     statusEl.innerText = "Calculation complete.";
     statusEl.style.color = "#FFD700";
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('calculateBtn').addEventListener('click', performCalculation);
 });
