@@ -13,15 +13,23 @@ export function generateRandomSubKey() {
 }
 
 export function applySubstitution(text, keyArray, reverse = false) {
-    let cleaned = text.toLowerCase().split('').filter(c => z29.includes(c));
-    return cleaned.map(char => {
-        const index = z29.indexOf(char);
+    return text.split('').map(char => {
+        const lowerChar = char.toLowerCase();
+        const index = z29.indexOf(lowerChar);
+
+        if (index === -1) return char;
+
+        let targetIndex;
         if (reverse) {
-            const originalIndex = keyArray.indexOf(index);
-            return z29[originalIndex];
+            targetIndex = keyArray.indexOf(index);
         } else {
-            const newIndex = keyArray[index];
-            return z29[newIndex];
+            targetIndex = keyArray[index];
         }
+
+        const resultChar = z29[targetIndex];
+
+        return char === char.toUpperCase() && char !== char.toLowerCase() 
+            ? resultChar.toUpperCase() 
+            : resultChar;
     }).join('');
 }

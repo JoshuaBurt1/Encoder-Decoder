@@ -15,9 +15,9 @@ def decode():
 def plaintext_attack():
     return render_template('attackPage.html')
 
-@app.route('/about')
+@app.route('/gematria')
 def about():
-    return render_template('aboutPage.html')
+    return render_template('gematriaPage.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

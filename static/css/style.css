@@ -167,9 +167,9 @@ button:hover {
 
 .hidden { display: none; }
 
-
 /* Responsive tweak for smaller screens */
 @media (max-width: 900px) {
     .container { grid-template-columns: 1fr; }
     body { align-items: flex-start; }
 }
+

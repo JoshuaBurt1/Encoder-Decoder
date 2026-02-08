@@ -1,5 +1,7 @@
 import { applyShift } from './shiftCipher_eng.js';
+import { applySubstitution } from './substitutionCipher.js';
 import { applyPermutation } from './permutationCipher.js';
+
 
 window.handlePlaintextAttack = function() {
     const plain = document.getElementById('attackPlain').value;
@@ -37,6 +39,38 @@ window.handlePlaintextAttack = function() {
             }
         }
     } 
+    else if (type === 'substitution') {
+        const alphabet = "abcdefghijklmnopqrstuvwxyz ,.";
+        let mapping = new Array(29).fill(null);
+        let recoveredCount = 0;
+
+        // Force both to lowercase to avoid case-sensitivity issues
+        const p = plain.toLowerCase();
+        const c = cipher.toLowerCase();
+
+        for (let i = 0; i < p.length; i++) {
+            const pIdx = alphabet.indexOf(p[i]);
+            const cIdx = alphabet.indexOf(c[i]);
+
+            // Only process if the character exists in our defined 29-char alphabet
+            if (pIdx !== -1 && cIdx !== -1) {
+                if (mapping[pIdx] === null) {
+                    mapping[pIdx] = cIdx;
+                    recoveredCount++;
+                } else if (mapping[pIdx] !== cIdx) {
+                    // This error triggers if 'a' maps to 'x' once, but then 'a' maps to 'y' later
+                    statusEl.style.color = "var(--error)";
+                    statusEl.innerText = `Inconsistent mapping for '${p[i]}': already maps to index ${mapping[pIdx]}, but found ${cIdx} at position ${i}.`;
+                    return;
+                }
+            }
+        }
+
+        const keyString = mapping.map(val => (val === null ? "?" : val)).join(',');
+        output.innerText = keyString;
+        statusEl.style.color = recoveredCount === 29 ? "var(--success)" : "#f39c12";
+        statusEl.innerText = `Recovered ${recoveredCount}/29 characters. Case-insensitive mapping complete.`;
+    }
     else if (type === 'permutation') {
         const m = parseInt(document.getElementById('attackM').value);
         if (plain.length < m) {
@@ -58,14 +92,13 @@ window.handlePlaintextAttack = function() {
 
             // VERIFICATION
             const testCipher = applyPermutation(plain, keyArr);
-            // We trim or handle padding because applyPermutation adds spaces
             if (testCipher.trim() === cipher.trim()) {
                 output.innerText = `Verified Permutation Key: ${keyArr.join(',')}`;
                 statusEl.style.color = "var(--success)";
                 statusEl.innerText = "Full Text Match Confirmed.";
             } else {
                 output.innerText = `Potential Key: ${keyArr.join(',')}`;
-                statusEl.style.color = "#f39c12"; // Orange
+                statusEl.style.color = "#f39c12";
                 statusEl.innerText = "Partial Match: Key works for block 1 but fails later.";
             }
         } catch (e) {

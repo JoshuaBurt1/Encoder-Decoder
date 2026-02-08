@@ -1,0 +1,48 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="section">
+    <div class="header" style="color: #d81b60;">
+        <h2>Ancient Numerical Systems</h2>
+    </div>
+
+    <div class="controls">
+        <div style="flex: 1; min-width: 200px;">
+            <label>Script System</label>
+            <select id="scriptSelect" style="width: 100%;">
+                <option value="hebrew">Hebrew (Standard Gematria)</option>
+                <option value="greek">Ancient Greek (Isopsephy)</option>
+                <option value="arabic">Arabic (Abjad System)</option>
+                <option value="indian">Indian (Katapayadi System)</option>
+            </select>
+        </div>
+
+        <div style="width: 100%; margin-top: 10px;">
+            <button class="btn-encode" id="calculateBtn" style="background: #d81b60;">Calculate & Breakdown</button>
+        </div>
+    </div>
+
+    <label>Text Entry</label>
+    <textarea id="gematriaEntry" placeholder="Enter text here..."></textarea>
+    
+    <div id="statsBar" style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px; color: #bdc3c7; font-size: 0.9rem; font-family: sans-serif;">
+    <span style="display: flex; align-items: center; gap: 8px;">
+        Value: <b id="gematriaResult" style="color: #d81b60; line-height: 1;">0</b>
+    </span>
+
+    <span style="border-left: 1px solid #444; height: 20px;"></span>
+
+    <span>Words: <b id="wordCount" style="color: #d81b60;">0</b></span>
+    <span>Letters: <b id="letterCount" style="color: #d81b60;">0</b></span>
+</div>
+    
+    <label>Step-by-Step Breakdown</label>
+    <div id="breakdownArea" class="output-area" dir="auto" style="min-height: 50px; font-family: monospace; color: #bdc3c7; text-align: start;">
+        Waiting for input...
+    </div>
+    
+    <div id="gematriaStatus" class="statusEl"></div>
+</div>
+
+<script type="module" src="{{ url_for('static', filename='js/gematria.js') }}"></script>
+{% endblock %}
