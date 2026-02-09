@@ -116,6 +116,7 @@ function performCalculation() {
     // --- OUTPUT ASSEMBLY ---
     let output = `CHARACTER BREAKDOWN:\n${stepByStepArr.join('\n')}\n\n`;
     output += `FREQUENCY (ORDER OF OCCURRENCE):\n${formatFreqWrapped(charData)}\n\n`;
+    output += `FREQUENCY (HIGHEST FREQUENCY):\n${formatFreqWrapped([...charData].sort((a,b) => b.freq - a.freq))}\n\n`;
 
     // WORD TABLE
     output += `WORD SUMMATION (SQUARE & HEXAGONAL GEOMETRY):\n`;
