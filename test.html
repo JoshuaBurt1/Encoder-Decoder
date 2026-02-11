@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gematria MP - Universal Constant Analysis</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 800px; margin-bottom: 20px; }
+        textarea { width: 100%; height: 80px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        .controls { display: flex; gap: 10px; margin-top: 15px; }
+        select, button { padding: 10px 18px; border-radius: 6px; border: 1px solid #ddd; background: white; cursor: pointer; }
+        button { background: #28a745; color: white; border: none; font-weight: bold; }
+        
+        #analysisSection { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .grids-wrapper { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; margin-bottom: 30px; }
+        
+        .grid-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; min-width: 180px; }
+        .grid-card h3 { margin: 0; color: #555; font-size: 14px; letter-spacing: 1px; }
+        .grid-card.const-card { border-top: 4px solid #444; }
+        .unmatched { color: #dc3545; font-weight: bold; }
+        .path-label { font-size: 11px; color: #888; font-weight: bold; margin-bottom: 4px; }
+        .grid-match-label-multi { font-size: 10px; color: #fd7e14; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        .grid-match-label { font-size: 10px; color: #00008b; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        canvas { background: white; border-radius: 4px; }
+        .section-title { width: 100%; text-align: center; margin: 20px 0; color: #444; text-transform: uppercase; letter-spacing: 1px; font-size: 14px; font-weight: bold; border-top: 2px solid #ddd; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Universal Gematria Engine</h2>
+    <textarea id="gematriaEntry">בְּרֵאשִׁית, בָּרָא אֱלֹהִים, אֵת הַשָּׁמַיִם, וְאֵת הָאָרֶץ.</textarea>
+    <div class="controls">
+        <select id="scriptSelect">
+            <option value="hebrew">Hebrew</option>
+            <option value="greek">Greek</option>
+        </select>
+        <button onclick="runSearch()">Generate Analysis</button>
+    </div>
+</div>
+
+<div id="analysisSection">
+    <div class="section-title">Planck</div> <div id="planckGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Light</div> <div id="lightGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Gravity</div> <div id="gravityGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Fine Structure</div> <div id="fineGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Magnetic</div> <div id="magneticGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Boltzmann</div> <div id="boltzmannGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Temperature</div> <div id="temperatureGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">DNA mass</div> <div id="dnaGridsContainer" class="grids-wrapper"></div>
+    <div class="section-title">Mersenne Prime Paths</div> <div id="gridsContainer" class="grids-wrapper"></div>
+</div>
+
+<script>
+
+
+const HEBREW_ZODIAC = {"rat [1]":292,"ox [2]":506, "tiger [3]":142, "rabbit [4]":653, "dragon [5]":510, "snake [6]":358, 
+"horse [7]":126, "goat [8]":77, "monkey [9]":186, "rooster [10]":336, "dog [11]":52, "pig [12]":225};
+const PLANCK = {"ℏ":1.054571817, "ℎ":6.62607015, "ℏ/c^2":1.17336938491, "ℎ/c^2":7.3724192313};
+const LIGHT = {"c^2":8.9875517873681764, "c":299792458,  "1/c":3.3335640951, "(1/c)^2":1.11265005, "(1/c)^4":1.2379901472};
+const GRAVITY = {"G":6.6743015, "κ":2.076647, "G^2":44.54628049};
+const FINE_STRUCTURE = {"1/α":137.035999, "α":0.007297352, "√α":0.08542453, "√(1/α)":11.706237};
+const MAGNETIC = {"μ0":1.2566370612719, "ε0":8.85418782};
+const BOLTZMANN = {"kB":1.380649};
+const TEMPERATURE = {"T":273.15};
+const DNA = {"GC":616.371, "AT":615.383, "Avg":615.8771};
+const MP_EXPONENTS = [2, 3, 5, 7, 13, 17, 19, 31, 61, 89, 107, 127, 521, 607, 1279, 2203, 2281, 3217, 4253, 4423, 9689, 9941, 11213, 19937, 21701, 23209, 44497, 86243, 110503, 132049, 216091, 756839, 859433, 1257787, 1398269, 2976221, 3021377, 6972593, 13466917, 20996011, 24036583, 25964951, 30402457, 32582657, 37156667, 42643801, 43112609, 57885161, 74207281, 77232917, 82589933, 136279841];
+
+const charts = {
+    hebrew: { 'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10, 'כ': 20, 'ך': 20, 'ל': 30, 'מ': 40, 'ם': 40, 'נ': 50, 'ן': 50, 'ס': 60, 'ע': 70, 'פ': 80, 'ף': 80, 'צ': 90, 'ץ': 90, 'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400 },
+    greek: { 'α': 1, 'β': 2, 'γ': 3, 'δ': 4, 'ε': 5, 'ζ': 7, 'η': 8, 'θ': 9, 'ι': 10, 'κ': 20, 'λ': 30, 'μ': 40, 'ν': 50, 'ξ': 60, 'ο': 70, 'π': 80, 'ρ': 100, 'σ': 200, 'ς': 200, 'τ': 300, 'υ': 400, 'φ': 500, 'χ': 600, 'ψ': 700, 'ω': 800 }
+};
+
+// Add these to your script section
+const CoordinateMappers = {
+    shell: (n) => {
+        if (n <= 0) return { x: 0, y: 0 };
+        if (n === 1) return { x: 0, y: 0 };
+        let k = Math.floor(Math.sqrt(n - 1));
+        let offset = n - (k * k);
+        if (offset <= k + 1) { 
+            return { x: k, y: offset - 1 };
+        } else {
+            let xCoord = k - (offset - (k + 1));
+            return { x: xCoord, y: k };
+        }
+    }
+};
+
+function runSearch() {
+    const text = document.getElementById('gematriaEntry').value;
+    const system = document.getElementById('scriptSelect').value;
+    const chart = charts[system] || charts.hebrew;
+    const cols = 4; 
+    
+    const sections = [
+        'planckGridsContainer', 'lightGridsContainer', 'gravityGridsContainer', 
+        'fineGridsContainer', 'magneticGridsContainer', 'boltzmannGridsContainer', 
+        'temperatureGridsContainer', 'dnaGridsContainer', 'gridsContainer'
+    ];
+    sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = "";
+    });
+
+    let gridData = [];
+    let prodGrid = [], sumGrid = [], psGrid = [];
+
+    text.trim().split(/\s+/).forEach(word => {
+        let wordTotal = 0;
+        const norm = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        for (let c of norm) if (chart[c]) wordTotal += chart[c];
+        
+        if (wordTotal > 0) {
+            // Calculate Shell Coordinates
+            const sPos = CoordinateMappers.shell(wordTotal);
+            const R = Math.floor(sPos.y) + 1;
+            const C = Math.floor(sPos.x) + 1;
+            
+            // Calculate derivative values
+            const valProd = R * C;
+            const valSum = R + C;
+            const valPS = valProd + valSum;
+
+            let digits = wordTotal.toString().split('').map(Number);
+            let dProd = valProd.toString().split('').map(Number);
+            let dSum = valSum.toString().split('').map(Number);
+            let dPS = valPS.toString().split('').map(Number);
+            
+            // Map main grid and derived grids
+            [
+                {d: digits, target: gridData}, 
+                {d: dProd, target: prodGrid}, 
+                {d: dSum, target: sumGrid}, 
+                {d: dPS, target: psGrid}
+            ].forEach(group => {
+                for (let i = 0; i < group.d.length; i += cols) {
+                    let chunk = group.d.slice(i, i + cols);
+                    while (chunk.length < cols) chunk.push(null);
+                    group.target.push(chunk);
+                }
+            });
+        }
+    });
+
+    if (gridData.length === 0) return;
+
+    // Process all constant groups for the primary grid
+    const mainDigits = gridData.flat().filter(x => x !== null);
+    const containers = [
+        {map: PLANCK, id: 'planckGridsContainer'},
+        {map: LIGHT, id: 'lightGridsContainer'},
+        {map: GRAVITY, id: 'gravityGridsContainer'},
+        {map: FINE_STRUCTURE, id: 'fineGridsContainer'},
+        {map: MAGNETIC, id: 'magneticGridsContainer'},
+        {map: BOLTZMANN, id: 'boltzmannGridsContainer'},
+        {map: TEMPERATURE, id: 'temperatureGridsContainer'},
+        {map: DNA, id: 'dnaGridsContainer'}
+    ];
+
+    containers.forEach(c => {
+        processConstantSet(c.map, gridData, mainDigits, c.id, prodGrid, sumGrid, psGrid);
+    });
+
+    // MP Logic for the Main Grid
+    MP_EXPONENTS.forEach(exp => {
+        const target = exp.toString().split('').map(Number);
+        
+        // We check if at least the main grid has paths to avoid empty rows
+        const mainPaths = findConnectedSets(gridData, target, true);
+        const mainOrtho = findConnectedSets(gridData, target, false);
+
+        if (mainPaths.length > 0) {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = "flex";
+            wrapper.style.gap = "10px";
+            wrapper.style.marginBottom = "30px";
+            wrapper.style.justifyContent = "center";
+            document.getElementById('gridsContainer').appendChild(wrapper);
+
+            // Generate the 4-space analysis for this MP exponent
+            createMPGridCard(exp, gridData, mainPaths, gridData.length, mainOrtho, wrapper, "Main");
+            createMPGridCard(exp, prodGrid, findConnectedSets(prodGrid, target, true), prodGrid.length, findConnectedSets(prodGrid, target, false), wrapper, "Prod");
+            createMPGridCard(exp, sumGrid, findConnectedSets(sumGrid, target, true), sumGrid.length, findConnectedSets(sumGrid, target, false), wrapper, "Sum");
+            createMPGridCard(exp, psGrid, findConnectedSets(psGrid, target, true), psGrid.length, findConnectedSets(psGrid, target, false), wrapper, "PS");
+        }
+    });
+}
+
+function processConstantSet(constantMap, gridData, gridDigits, containerId, prodGrid, sumGrid, psGrid) {
+    const totalGridCount = gridDigits.length;
+    let results = [];
+
+    Object.entries(constantMap).forEach(([label, cVal]) => {
+        const cStr = cVal.toString();
+        const cDigits = cStr.replace('.', '').split('').map(Number);
+        let cFreq = new Map();
+        cDigits.forEach(d => cFreq.set(d, (cFreq.get(d) || 0) + 1));
+
+        let gridFreq = new Map();
+        gridDigits.forEach(d => gridFreq.set(d, (gridFreq.get(d) || 0) + 1));
+
+        let matchStatus = [];
+        let tempGridFreq = new Map(gridFreq);
+        cStr.split('').forEach(char => {
+            if (char === '.') { matchStatus.push({char: '.', found: true}); return; }
+            let d = parseInt(char);
+            if (tempGridFreq.get(d) > 0) {
+                matchStatus.push({char: char, found: true});
+                tempGridFreq.set(d, tempGridFreq.get(d) - 1);
+            } else { matchStatus.push({char: char, found: false}); }
+        });
+
+        results.push({
+            label: label, val: cVal, status: matchStatus, cFreq: cFreq,
+            constPct: parseFloat(((matchStatus.filter(s => s.char !== '.' && s.found).length) / cDigits.length * 100).toFixed(1))
+        });
+    });
+
+    results.sort((a, b) => b.constPct - a.constPct);
+    results.forEach(score => {
+        // Create the multi-grid display for each constant
+        const mainContainer = document.getElementById(containerId);
+        const wrapper = document.createElement('div');
+        wrapper.style.display = "flex";
+        wrapper.style.gap = "10px";
+        wrapper.style.alignItems = "flex-start";
+        wrapper.style.marginBottom = "20px";
+        
+        createConstGridCard(score, gridData, wrapper, "Main");
+        createConstGridCard(score, prodGrid, wrapper, "Prod");
+        createConstGridCard(score, sumGrid, wrapper, "Sum");
+        createConstGridCard(score, psGrid, wrapper, "PS");
+        
+        mainContainer.appendChild(wrapper);
+    });
+}
+
+function createConstGridCard(score, grid, parentElement, typeLabel) {
+    const card = document.createElement('div');
+    card.className = 'grid-card const-card';
+    card.style.minWidth = "180px";
+    
+    // 1. Calculate specific stats for THIS grid
+    const gridDigits = grid.flat().filter(x => x !== null);
+    const totalGridCount = gridDigits.length;
+    
+    // Frequency of digits in THIS grid
+    let gridFreq = new Map();
+    gridDigits.forEach(d => gridFreq.set(d, (gridFreq.get(d) || 0) + 1));
+
+    // Calculate Match Status and Match % for this specific grid
+    let tempGridFreq = new Map(gridFreq);
+    const cStr = score.val.toString();
+    const cDigits = cStr.replace('.', '').split('').map(Number);
+    
+    let matchStatus = [];
+    cStr.split('').forEach(char => {
+        if (char === '.') { matchStatus.push({char: '.', found: true}); return; }
+        let d = parseInt(char);
+        if (tempGridFreq.get(d) > 0) {
+            matchStatus.push({char: char, found: true});
+            tempGridFreq.set(d, tempGridFreq.get(d) - 1);
+        } else { 
+            matchStatus.push({char: char, found: false}); 
+        }
+    });
+
+    const matchedCount = matchStatus.filter(s => s.char !== '.' && s.found).length;
+    const currentMatchPct = ((matchedCount / cDigits.length) * 100).toFixed(1);
+
+    // Calculate Single (S) and Multi (M) for this specific grid
+    let potentialSingle = 0, potentialMulti = 0;
+    gridDigits.forEach(d => {
+        if (score.cFreq.has(d)) {
+            if (score.cFreq.get(d) === 1) potentialSingle++;
+            else potentialMulti++;
+        }
+    });
+
+    const currentS = ((potentialSingle / totalGridCount) * 100).toFixed(1);
+    const currentM = ((potentialMulti / totalGridCount) * 100).toFixed(1);
+
+    // 2. Residuals & Zodiac (Grid Specific)
+    let residualDigits = [];
+    let tokenPool = new Map(score.cFreq);
+    // We determine residuals while preparing the canvas loop later, 
+    // but for the UI label we'll pre-calculate:
+    gridDigits.forEach(d => {
+        if (!score.cFreq.has(d)) residualDigits.push(d);
+    });
+
+    const foundZodiacs = Object.entries(HEBREW_ZODIAC).filter(([name, zVal]) => {
+        const zFreq = new Map();
+        zVal.toString().split('').map(Number).forEach(d => zFreq.set(d, (zFreq.get(d) || 0) + 1));
+        const resFreq = new Map();
+        residualDigits.forEach(rd => resFreq.set(rd, (resFreq.get(rd) || 0) + 1));
+        for (let [digit, count] of zFreq) {
+            if ((resFreq.get(digit) || 0) < count) return false;
+        }
+        return true;
+    });
+
+    // 3. Render UI
+    let digitsHtml = matchStatus.map(s => `<span class="${s.found ? '' : 'unmatched'}">${s.char}</span>`).join('');
+    let zodiacHtml = foundZodiacs.slice(0, 3).map(([name]) => 
+        `<div class="path-label" style="color:#6f42c1; font-size:9px;">Zodiac: ${name}</div>`
+    ).join('');
+
+    card.innerHTML = `
+        <h3 style="font-size:12px;">${typeLabel}: ${score.label}</h3>
+        <div class="path-label" style="margin-bottom:2px;">${digitsHtml}</div>
+        <div class="path-label" style="color:#28a745; font-size:10px; font-weight:bold;">Match: ${currentMatchPct}%</div>
+        <div style="display:flex; justify-content:center; gap:8px; margin-bottom:4px;">
+            <span style="color:#fd7e14; font-size:9px; font-weight:bold;">M: ${currentM}%</span>
+            <span style="color:#00008b; font-size:9px; font-weight:bold;">S: ${currentS}%</span>
+        </div>
+        <div style="min-height:30px;">${zodiacHtml || `<div class="path-label" style="font-size:8px; color:#999;">No Zodiac Matches</div>`}</div>
+    `;
+    
+    // 4. Canvas Drawing
+    const step = 40;
+    const canvas = document.createElement('canvas');
+    canvas.width = grid[0].length * step;
+    canvas.height = grid.length * step;
+    const ctx = canvas.getContext('2d');
+    ctx.font = "bold 15px Arial";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+    let drawPool = new Map(score.cFreq);
+    grid.forEach((row, r) => {
+        row.forEach((val, c) => {
+            if (val === null) return;
+            const x = c * step + step / 2, y = r * step + step / 2;
+            let color = "#bbb", underline = false;
+
+            if (drawPool.has(val) && drawPool.get(val) > 0) {
+                underline = true;
+                drawPool.set(val, drawPool.get(val) - 1);
+            }
+
+            if (score.cFreq.has(val)) {
+                color = score.cFreq.get(val) === 1 ? "#00008b" : "#fd7e14";
+            }
+
+            if (underline) {
+                ctx.strokeStyle = color; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x - 12, y + 12); ctx.lineTo(x + 12, y + 12); ctx.stroke();
+            }
+            ctx.fillStyle = color; ctx.fillText(val, x, y);
+        });
+    });
+
+    card.appendChild(canvas);
+    parentElement.appendChild(card);
+}
+
+function createMPGridCard(exponent, grid, paths, totalRows, orthoPaths, parentElement, typeLabel) {
+    const card = document.createElement('div');
+    card.className = 'grid-card';
+    card.style.minWidth = "160px";
+    
+    const rank = MP_EXPONENTS.indexOf(exponent) + 1;
+    // Orthogonal check for the specific label
+    const orthoCount = paths.filter(path => 
+        orthoPaths.some(op => 
+            op.length === path.length && 
+            op.every((v, i) => v[0] === path[i][0] && v[1] === path[i][1])
+        )
+    ).length;
+
+    card.innerHTML = `
+        <h3 style="font-size:12px;">${typeLabel}: M${exponent}</h3>
+        <div class="path-label" style="color:#007bff;">Paths: ${paths.length}</div>
+        <div class="path-label" style="color:#28a745; font-size:10px;">Ortho: ${orthoCount}</div>
+        <div class="path-label" style="font-size:9px; color:#666; margin-bottom:5px;">MP: ${rank}</div>
+    `;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const step = 40;
+    
+    const gridCols = grid.length > 0 ? grid[0].length : 4;
+    canvas.width = gridCols * step;
+    canvas.height = grid.length * step;
+
+    const goldNodes = new Set();
+    const redNodes = new Set();
+
+    orthoPaths.forEach(path => {
+        const keyPath = path.map(p => `${p[0]},${p[1]}`);
+        const rowsCovered = new Set(path.map(p => p[0]));
+        if (rowsCovered.has(0) && rowsCovered.has(totalRows - 1)) {
+            keyPath.forEach(k => goldNodes.add(k));
+        } else {
+            keyPath.forEach(k => redNodes.add(k));
+        }
+    });
+
+    paths.forEach((path, idx) => {
+        const isOrtho = orthoPaths.some(op => 
+            op.length === path.length && 
+            op.every((v, i) => v[0] === path[i][0] && v[1] === path[i][1])
+        );
+
+        ctx.beginPath();
+        ctx.lineWidth = step * 0.5;
+        ctx.lineCap = "round"; 
+        ctx.lineJoin = "round";
+        
+        // Per instructions: blue if orthogonal
+        ctx.strokeStyle = isOrtho ? `rgba(0, 123, 255, 0.3)` : `hsla(${(idx * 137) % 360}, 70%, 50%, 0.15)`;
+        
+        path.forEach((p, i) => {
+            const x = p[1] * step + step / 2;
+            const y = p[0] * step + step / 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    });
+
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+
+    grid.forEach((row, r) => {
+        row.forEach((val, c) => {
+            if (val === null) return;
+            const x = c * step + step / 2;
+            const y = r * step + step / 2;
+            const key = `${r},${c}`;
+            
+            if (goldNodes.has(key)) ctx.fillStyle = "#FFD700";
+            else if (redNodes.has(key)) ctx.fillStyle = "#dc3545";
+            else ctx.fillStyle = "#bbb";
+            
+            ctx.fillText(val, x, y);
+        });
+    });
+
+    card.appendChild(canvas);
+    parentElement.appendChild(card);
+}
+
+function findConnectedSets(grid, target, allowDiagonals) {
+    const rows = grid.length, cols = grid[0].length;
+    const tCounts = new Map();
+    target.forEach(v => tCounts.set(v, (tCounts.get(v) || 0) + 1));
+    const paths = [];
+    const dirs = allowDiagonals ? [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]] : [[0,1],[0,-1],[1,0],[-1,0]];
+    function dfs(r, c, path, counts) {
+        if (path.length === target.length) { paths.push([...path]); return; }
+        for (let [dr, dc] of dirs) {
+            const nr = r+dr, nc = c+dc;
+            if (nr>=0 && nr<rows && nc>=0 && nc<cols && grid[nr][nc] !== null && !path.some(p => p[0]===nr && p[1]===nc)) {
+                const val = grid[nr][nc];
+                if ((counts.get(val)||0) < (tCounts.get(val)||0)) {
+                    counts.set(val, (counts.get(val)||0) + 1);
+                    path.push([nr, nc]);
+                    dfs(nr, nc, path, counts);
+                    path.pop();
+                    counts.set(val, counts.get(val) - 1);
+                }
+            }
+        }
+    }
+    for (let r=0; r<rows; r++) {
+        for (let c=0; c<cols; c++) {
+            if (grid[r][c] !== null && tCounts.has(grid[r][c])) dfs(r, c, [[r,c]], new Map([[grid[r][c], 1]]));
+        }
+    }
+    const unique = []; const seen = new Set();
+    paths.forEach(p => {
+        const id = p.map(pos => `${pos[0]},${pos[1]}`).sort().join('|');
+        if (!seen.has(id)) { unique.push(p); seen.add(id); }
+    });
+    return unique;
+}
+</script>
+</body>
+</html>
