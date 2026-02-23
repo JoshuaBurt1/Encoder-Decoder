@@ -77,95 +77,6 @@ function findConnectedSets(grid, targetSequence) {
     return allPaths;
 }
 
-function renderWithMatrixHighlighting(data) {
-    let output = `VALUE | SHELL EQ | [R,C] | (P, S, PS) | HEX\n${"-".repeat(80)}\n`;
-
-    data.forEach((row, i) => {
-        // Check neighbors for highlighting (Vertical & Diagonal)
-        const neighbors = data.filter(other => Math.abs(other.y - row.y) === 1);
-        
-        // Define which values in this row deserve highlighting
-        const checkValue = (val) => {
-            const isExact = MP_EXPONENTS.has(val) || val === 2434;
-            const isAnagram = Array.from(MP_EXPONENTS).some(mp => getSortKey(mp) === getSortKey(val));
-            return { isExact, isAnagram };
-        };
-
-        // Helper to wrap text in <span> based on coordinate rules
-        const style = (val) => {
-            const status = checkValue(val);
-            if (!status.isExact && !status.isAnagram) return val;
-            
-            // Logic: Highlighting triggers if neighbor also has a special value 
-            // in a nearby column (e.g., Total column, or R column)
-            const color = status.isAnagram ? '#00ffff' : '#ffff00';
-            return `<span style="background-color:${color}; font-weight:bold;">${val}</span>`;
-        };
-
-        // Construct the row string using the styled values
-        const shellStr = `${row.total}=${row.shell.base}*${row.shell.base}${row.shell.op}${row.shell.val}`;
-        
-        output += `${style(row.total).toString().padStart(5)} | ` +
-                  `${shellStr.padEnd(15)} | ` +
-                  `[R:${style(row.coords.r)}, C:${style(row.coords.c)}] | ` +
-                  `(P:${style(row.math.p)}, S:${style(row.math.s)}, PS:${style(row.math.ps)}) | ` +
-                  `{L:${row.hex.L}, ${row.hex.sum}+${row.hex.off}}\n`;
-    });
-
-    return output;
-}
-function applyMPHighlighting(text, targetSet) {
-    const lines = text.split('\n');
-    const grid = lines.map(line => line.split(''));
-    const highlightMap = grid.map(line => line.map(() => ({ active: false, color: 'yellow' })));
-    
-    // 1. Map all numbers found in the text to a 'Matrix' coordinate system
-    const numberPositions = [];
-    lines.forEach((line, y) => {
-        const regex = /\d+/g;
-        let match;
-        while ((match = regex.exec(line)) !== null) {
-            numberPositions.push({
-                val: parseInt(match[0]),
-                y: y,
-                xStart: match.index,
-                xEnd: match.index + match[0].length - 1
-            });
-        }
-    });
-
-    // 2. Identify 'Sequences' (The Snaking Logic)
-    // We treat numberPositions as a graph. 
-    // Two numbers are "connected" if they are within 1 row and 1 "column" block of each other
-    const sequenceToFind = [4, 3, 4, 2]; // Your vertical string test
-    
-    // (Logic for findConnectedSets would go here, checking numberPositions 
-    // instead of a strict 2D array to account for text spacing)
-    
-    // 3. Apply standard MP Highlights (Exact & Anagram)
-    const mpSortKeys = new Map();
-    targetSet.forEach(val => mpSortKeys.set(getSortKey(val), val));
-
-    numberPositions.forEach(num => {
-        let type = targetSet.has(num.val) ? 'exact' : (mpSortKeys.has(getSortKey(num.val)) ? 'anagram' : null);
-        
-        // If it's a target number, highlight it
-        if (type) {
-            const color = (type === 'anagram') ? 'cyan' : 'yellow';
-            for (let x = num.xStart; x <= num.xEnd; x++) {
-                highlightMap[num.y][x].active = true;
-                highlightMap[num.y][x].color = color;
-            }
-        }
-    });
-
-    // 4. Final Render
-    return grid.map((line, y) => line.map((char, x) => {
-        const cell = highlightMap[y][x];
-        return cell.active ? `<span style="background-color: ${cell.color === 'cyan' ? '#00ffff' : '#ffff00'}; color: black; font-weight: bold;">${char}</span>` : char;
-    }).join('')).join('\n');
-}
-
 // --- CALCULATION LOGIC ---
 const charts = {
     hebrew: { 'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9, 'י': 10, 'כ': 20, 'ך': 20, 'ל': 30, 'מ': 40, 'ם': 40, 'נ': 50, 'ן': 50, 'ס': 60, 'ע': 70, 'פ': 80, 'ף': 80, 'צ': 90, 'ץ': 90, 'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400 },
@@ -195,8 +106,6 @@ function performCalculation() {
     let wordSummationArr = [];
     let punctuationLinesRaw = [];
 
-    // Include your test value in the MP set for this session
-    const activeTargets = new Set(MP_EXPONENTS);
     segments.forEach(segment => {
         if (punctuationMarkers.includes(segment)) return;
 
@@ -219,10 +128,8 @@ function performCalculation() {
             }
 
             if (wordTotal > 0) {
-                const stepsString = wordSteps.join(' + ');
-                stepByStepArr.push(`${wordTotal} = ${stepsString} : \u200E${word}`);               
+                stepByStepArr.push(`${wordTotal} = ${wordSteps.join(' + ')} : \u200E${word}`);               
 
-                // --- GEOMETRY CALCULATIONS ---
                 const sPos = CoordinateMappers.shell(wordTotal);
                 const R = Math.floor(sPos.y) + 1;
                 const C = Math.floor(sPos.x) + 1;
@@ -241,7 +148,6 @@ function performCalculation() {
                 let hexSum = Number(3n * s * s - 3n * s + 1n);
                 let hexOffset = wordTotal - hexSum;
 
-                // FIXED: String assembly
                 const wordEntry = `${shellEq.padEnd(15)} | R:${R}, C:${C} | ` +
                                 `(${R}*${C}=${prod}, ${R}+${C}=${sum}, PS:${ps}) | ` +
                                 `L:${hexLayer}, ${hexSum}+${hexOffset}`;
@@ -295,19 +201,14 @@ function performCalculation() {
     output += `PUNCTUATION SUMMATION:\n`;
     const formattedPunctuation = punctuationLinesRaw.map(item => {
         const sPos = CoordinateMappers.shell(item.sum);
-        const R = Math.floor(sPos.y) + 1;
-        const C = Math.floor(sPos.x) + 1;
-        const prod = R * C; const sum = R + C; const ps = prod + sum;
+        const R = Math.floor(sPos.y) + 1, C = Math.floor(sPos.x) + 1;
         const root = Math.floor(Math.sqrt(item.sum));
         const rem = item.sum - (root * root);
-        const shellEq = `${item.sum}=${root}*${root}+${rem}`;
-
         let hexLayer = Math.ceil((3 + Math.sqrt(9 - 12 * (1 - item.sum))) / 6);
         let s = BigInt(Math.max(0, hexLayer - 1));
         let hexSum = Number(3n * s * s - 3n * s + 1n);
-        let hexOffset = item.sum - hexSum;
 
-        return `${item.eq} = ${item.sum} | ${shellEq} | [R:${R}, C:${C}] | (${R}*${C}=${prod}, ${R}+${C}=${sum}, PS:${ps}) | {L:${hexLayer}, ${hexSum}+${hexOffset}}`;
+        return `${item.eq} = ${item.sum} | ${item.sum}=${root}*${root}+${rem} | [R:${R}, C:${C}] | (${R}*${C}=${R*C}, ${R}+${C}=${R+C}, PS:${(R*C)+(R+C)}) | {L:${hexLayer}, ${hexSum}+${item.sum - hexSum}}`;
     });
     output += `${formattedPunctuation.join('\n')}\n\n`;
 
@@ -316,23 +217,19 @@ function performCalculation() {
     const formattedCumulative = punctuationLinesRaw.map(item => {
         runningCumulative += Number(item.sum);
         const sPos = CoordinateMappers.shell(runningCumulative);
-        const R = Math.floor(sPos.y) + 1;
-        const C = Math.floor(sPos.x) + 1;
-        const prod = R * C; const sum = R + C; const ps = prod + sum;
+        const R = Math.floor(sPos.y) + 1, C = Math.floor(sPos.x) + 1;
         const root = Math.floor(Math.sqrt(runningCumulative));
         const rem = runningCumulative - (root * root);
-        const shellEq = `${runningCumulative}=${root}*${root}+${rem}`;
-
         let hexLayer = Math.ceil((3 + Math.sqrt(9 - 12 * (1 - runningCumulative))) / 6);
         let s = BigInt(Math.max(0, hexLayer - 1));
         let hexSum = Number(3n * s * s - 3n * s + 1n);
-        let hexOffset = runningCumulative - hexSum;
 
-        return `${item.sum} -> ${runningCumulative} | ${shellEq} | [R:${R}, C:${C}] | (${R}*${C}=${prod}, ${R}+${C}=${sum}, PS:${ps}) | {L:${hexLayer}, ${hexSum}+${hexOffset}}`;
+        return `${item.sum} -> ${runningCumulative} | ${runningCumulative}=${root}*${root}+${rem} | [R:${R}, C:${C}] | (${R}*${C}=${R*C}, ${R}+${C}=${R+C}, PS:${(R*C)+(R+C)}) | {L:${hexLayer}, ${hexSum}+${runningCumulative - hexSum}}`;
     });
     output += `${formattedCumulative.join('\n')}`;
 
-    breakdownEl.innerHTML = applyMPHighlighting(output, activeTargets);    
+    // Set as plain text to ensure no HTML rendering
+    breakdownEl.innerText = output;    
     resultEl.innerText = globalTotal;
     document.getElementById('wordCount').innerText = wordSummationArr.length;
     document.getElementById('letterCount').innerText = activeLetterCount;
